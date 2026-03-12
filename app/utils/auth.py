@@ -1,7 +1,6 @@
 """Authentication utilities for password hashing and JWT tokens."""
 
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 from jose import JWTError, jwt
@@ -26,20 +25,20 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(
     data: dict,
-    expires_delta: Optional[timedelta] = None,
+    expires_delta: timedelta | None = None,
 ) -> str:
     """Create a JWT access token."""
     settings = get_settings()
-    
+
     to_encode = data.copy()
-    
+
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=30)
-    
+        expire = datetime.now(UTC) + timedelta(minutes=30)
+
     to_encode.update({"exp": expire})
-    
+
     encoded_jwt = jwt.encode(
         to_encode,
         settings.secret_key,
@@ -48,10 +47,10 @@ def create_access_token(
     return encoded_jwt
 
 
-def decode_token(token: str) -> Optional[dict]:
+def decode_token(token: str) -> dict | None:
     """Decode and verify a JWT token."""
     settings = get_settings()
-    
+
     try:
         payload = jwt.decode(
             token,

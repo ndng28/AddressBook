@@ -81,21 +81,24 @@ def get_deleted_contacts(
 # Static routes (must be defined BEFORE parameterized routes)
 # ============================================================
 
+
 @router.get("", response_model=ContactListResponse)
 def list_contacts(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(20, ge=1, le=100, description="Maximum number of records to return"),
+    limit: int = Query(
+        20, ge=1, le=100, description="Maximum number of records to return"
+    ),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """List all active contacts for the current user with pagination.
-    
+
     Args:
         skip: Number of records to skip for pagination
         limit: Maximum number of records to return (1-100)
         current_user: The authenticated user
         db: Database session
-        
+
     Returns:
         Paginated list of contacts
     """
@@ -120,15 +123,15 @@ def create_new_contact(
     db: Session = Depends(get_db),
 ):
     """Create a new contact for the current user.
-    
+
     Args:
         contact: Contact creation data
         current_user: The authenticated user
         db: Database session
-        
+
     Returns:
         The created contact with generated ID
-        
+
     Raises:
         HTTPException: If contact data is invalid
     """
@@ -138,18 +141,20 @@ def create_new_contact(
 @router.get("/deleted", response_model=ContactListResponse)
 def list_deleted_contacts(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(20, ge=1, le=100, description="Maximum number of records to return"),
+    limit: int = Query(
+        20, ge=1, le=100, description="Maximum number of records to return"
+    ),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """List all soft-deleted contacts for the current user.
-    
+
     Args:
         skip: Number of records to skip for pagination
         limit: Maximum number of records to return (1-100)
         current_user: The authenticated user
         db: Database session
-        
+
     Returns:
         Paginated list of deleted contacts
     """
@@ -171,6 +176,7 @@ def list_deleted_contacts(
 # Parameterized routes with UUID (defined AFTER static routes)
 # ============================================================
 
+
 @router.get("/{contact_id}", response_model=ContactResponse)
 def get_contact_details(
     contact_id: uuid.UUID,
@@ -178,15 +184,15 @@ def get_contact_details(
     db: Session = Depends(get_db),
 ):
     """Get details of a specific contact.
-    
+
     Args:
         contact_id: UUID of the contact to retrieve
         current_user: The authenticated user
         db: Database session
-        
+
     Returns:
         Contact details
-        
+
     Raises:
         HTTPException: 404 if contact not found, 403 if contact belongs to another user
     """
@@ -194,10 +200,14 @@ def get_contact_details(
 
     if not contact:
         # Check if contact exists but belongs to another user
-        other_contact = db.query(Contact).filter(
-            Contact.id == contact_id,
-            Contact.user_id != current_user.id,
-        ).first()
+        other_contact = (
+            db.query(Contact)
+            .filter(
+                Contact.id == contact_id,
+                Contact.user_id != current_user.id,
+            )
+            .first()
+        )
 
         if other_contact:
             raise HTTPException(
@@ -221,32 +231,40 @@ def update_contact_details(
     db: Session = Depends(get_db),
 ):
     """Update an existing contact.
-    
+
     Args:
         contact_id: UUID of the contact to update
         contact_update: Contact update data (only provided fields are updated)
         current_user: The authenticated user
         db: Database session
-        
+
     Returns:
         Updated contact
-        
+
     Raises:
         HTTPException: 404 if contact not found, 403 if contact belongs to another user
     """
     # First check if contact exists and belongs to user
-    contact = db.query(Contact).filter(
-        Contact.id == contact_id,
-        Contact.user_id == current_user.id,
-        Contact.is_active.is_(True),
-    ).first()
+    contact = (
+        db.query(Contact)
+        .filter(
+            Contact.id == contact_id,
+            Contact.user_id == current_user.id,
+            Contact.is_active.is_(True),
+        )
+        .first()
+    )
 
     if not contact:
         # Check if contact exists but belongs to another user
-        other_contact = db.query(Contact).filter(
-            Contact.id == contact_id,
-            Contact.user_id != current_user.id,
-        ).first()
+        other_contact = (
+            db.query(Contact)
+            .filter(
+                Contact.id == contact_id,
+                Contact.user_id != current_user.id,
+            )
+            .first()
+        )
 
         if other_contact:
             raise HTTPException(
@@ -270,27 +288,35 @@ def delete_contact_endpoint(
     db: Session = Depends(get_db),
 ):
     """Soft delete a contact.
-    
+
     Args:
         contact_id: UUID of the contact to delete
         current_user: The authenticated user
         db: Database session
-        
+
     Raises:
         HTTPException: 404 if contact not found, 403 if contact belongs to another user
     """
     # Check if contact exists and belongs to user
-    contact = db.query(Contact).filter(
-        Contact.id == contact_id,
-        Contact.user_id == current_user.id,
-    ).first()
+    contact = (
+        db.query(Contact)
+        .filter(
+            Contact.id == contact_id,
+            Contact.user_id == current_user.id,
+        )
+        .first()
+    )
 
     if not contact:
         # Check if contact exists but belongs to another user
-        other_contact = db.query(Contact).filter(
-            Contact.id == contact_id,
-            Contact.user_id != current_user.id,
-        ).first()
+        other_contact = (
+            db.query(Contact)
+            .filter(
+                Contact.id == contact_id,
+                Contact.user_id != current_user.id,
+            )
+            .first()
+        )
 
         if other_contact:
             raise HTTPException(
@@ -314,30 +340,38 @@ def restore_deleted_contact(
     db: Session = Depends(get_db),
 ):
     """Restore a soft-deleted contact.
-    
+
     Args:
         contact_id: UUID of the contact to restore
         current_user: The authenticated user
         db: Database session
-        
+
     Returns:
         Restored contact
-        
+
     Raises:
         HTTPException: 404 if contact not found, 403 if contact belongs to another user
     """
     # Check if contact exists and belongs to user
-    contact = db.query(Contact).filter(
-        Contact.id == contact_id,
-        Contact.user_id == current_user.id,
-    ).first()
+    contact = (
+        db.query(Contact)
+        .filter(
+            Contact.id == contact_id,
+            Contact.user_id == current_user.id,
+        )
+        .first()
+    )
 
     if not contact:
         # Check if contact exists but belongs to another user
-        other_contact = db.query(Contact).filter(
-            Contact.id == contact_id,
-            Contact.user_id != current_user.id,
-        ).first()
+        other_contact = (
+            db.query(Contact)
+            .filter(
+                Contact.id == contact_id,
+                Contact.user_id != current_user.id,
+            )
+            .first()
+        )
 
         if other_contact:
             raise HTTPException(

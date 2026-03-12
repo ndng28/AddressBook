@@ -1,5 +1,8 @@
 # AddressBook
 
+[![security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
 A practice FastAPI project for managing contacts. This repository serves as an example open-source project demonstrating modern Python development practices.
 
 ## Overview
@@ -83,6 +86,41 @@ mypy .
 # Run all checks
 ruff check . && black --check . && mypy . && pytest
 ```
+
+### Pre-commit Hooks
+
+This project uses [pre-commit](https://pre-commit.com/) hooks for automated code quality and security checks.
+
+**Setup:**
+
+```bash
+# Install pre-commit hooks
+pip install pre-commit
+pre-commit install
+
+# Run all hooks on all files (initial setup)
+pre-commit run --all-files
+```
+
+**Security Hooks Included:**
+
+- **gitleaks** - Detects 150+ secret types (API keys, tokens, passwords)
+- **detect-secrets** - Enterprise-grade secret detection with baseline
+- **bandit** - Python security linter (finds SQL injection, hardcoded passwords, etc.)
+- **safety** - CVE scanning for Python dependencies
+
+**Code Quality Hooks:**
+
+- **ruff** - Fast Python linter and formatter
+- **mypy** - Type checking
+- **trailing-whitespace** / **end-of-file-fixer** - File formatting
+- **check-yaml** / **check-json** / **check-toml** - Syntax validation
+
+**Managing False Positives:**
+
+- **Gitleaks**: Add patterns to `.gitleaks.toml` or specific fingerprints to `.gitleaksignore`
+- **detect-secrets**: Add `# pragma: allowlist secret` comment to lines with intentional secrets
+- **bandit**: Add `# nosec` comment to lines with intentional security patterns
 
 ## Project Structure
 

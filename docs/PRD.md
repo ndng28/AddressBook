@@ -63,7 +63,7 @@ AddressBook is a REST API built with FastAPI for managing personal and professio
 
 #### CRUD Operations
 - **Create**: Add new contacts with full details
-- **Read**: 
+- **Read**:
   - Get single contact by ID
   - List all contacts with pagination
   - Search contacts by name, email, company

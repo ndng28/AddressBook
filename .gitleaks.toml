@@ -1,0 +1,43 @@
+# Gitleaks Configuration
+# This file configures gitleaks to detect secrets while allowing false positives
+# See: https://github.com/gitleaks/gitleaks#configuration
+
+title = "AddressBook Gitleaks Config"
+
+# Extend the default configuration
+[extend]
+useDefault = true
+
+# Global allowlist - secrets that are safe to commit
+[[allowlists]]
+description = "Global allowlist"
+paths = [
+  '''\.gitleaks\.toml$''',
+  '''\.gitleaksignore$''',
+  '''\.secrets\.baseline$''',
+  '''test.*\.py$''',
+  '''tests/.*\.py$''',
+  '''alembic/versions/.*\.py$''',
+  '''\.env\.example$''',
+  '''\.env\.template$''',
+  '''docs/''',
+]
+regexes = [
+  # Example/test secrets that are safe
+  '''EXAMPLE_SECRET''',
+  '''your-secret-key''',
+  '''test-secret''',
+  '''fake-secret''',
+  '''password123''',
+  '''changeme''',
+  '''example\.com''',
+  '''localhost''',
+  # SQLAlchemy URLs with placeholder credentials
+  '''postgresql://user:password@localhost''',
+]
+
+# Specific rule allowlists (if needed)
+# [[rules]]
+# id = "aws-access-token"
+# [[rules.allowlists]]
+# regexes = ["AKIAIOSFODNN7EXAMPLE"]

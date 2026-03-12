@@ -34,21 +34,21 @@ def client():
     """Create a test client with overridden database dependency."""
     # Create tables
     Base.metadata.create_all(bind=engine)
-    
+
     # Create a session for this test
     session = TestingSessionLocal()
-    
+
     def override_get_db():
         try:
             yield session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     with TestClient(app) as test_client:
         yield test_client
-    
+
     # Cleanup
     session.close()
     app.dependency_overrides.clear()

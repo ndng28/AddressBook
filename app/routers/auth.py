@@ -18,7 +18,9 @@ router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 def register(
     user_data: UserCreate,
     db: Session = Depends(get_db),
@@ -31,7 +33,7 @@ def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    
+
     # Create new user
     user = create_user(db=db, user=user_data)
     return user
@@ -50,13 +52,13 @@ def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     access_token_expires = timedelta(minutes=30)
     access_token = create_access_token(
         data={"sub": user.email, "user_id": str(user.id)},
         expires_delta=access_token_expires,
     )
-    
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -67,23 +69,23 @@ def get_current_user(
 ):
     """Get current authenticated user."""
     from app.utils.auth import decode_token
-    
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     payload = decode_token(token)
     if payload is None:
         raise credentials_exception
-    
+
     email: str = payload.get("sub")
     if email is None:
         raise credentials_exception
-    
+
     user = get_user_by_email(db, email=email)
     if user is None:
         raise credentials_exception
-    
+
     return user

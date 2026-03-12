@@ -165,14 +165,14 @@ def read_contact(contact_id: int, db: Session = Depends(get_db)):
 ```python
 def create_contact(db: Session, contact: ContactCreate) -> Contact:
     """Create a new contact for the current user.
-    
+
     Args:
         db: Database session
         contact: Contact creation data
-        
+
     Returns:
         The created contact
-        
+
     Raises:
         HTTPException: If email already exists
     """
@@ -271,7 +271,7 @@ DEBUG=true
 
 ---
 
-**Note for AI Agents**: 
+**Note for AI Agents**:
 1. **Invoke skills first**: If there's even a 1% chance a skill applies, invoke it BEFORE any response
 2. Always run `pytest path/to/test.py::test_name` for single tests
 3. Use `ruff check . --fix` before committing
