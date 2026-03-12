@@ -124,3 +124,59 @@ def restore_contact(
     db_contact.is_active = True
     db.commit()
     return True
+
+
+def search_contacts(
+    db: Session,
+    user_id: uuid.UUID,
+    search: str | None = None,
+    tags: list[str] | None = None,
+    skip: int = 0,
+    limit: int = 100,
+) -> tuple[list[Contact], int]:
+    """Search contacts by name, company, or filter by tags.
+
+    Args:
+        db: Database session
+        user_id: User ID to filter contacts
+        search: Search string for name/company (case-insensitive partial match)
+        tags: List of tags to filter by (contacts must have ALL tags)
+        skip: Pagination offset
+        limit: Maximum results to return
+
+    Returns:
+        Tuple of (list of contacts, total count)
+    """
+    from sqlalchemy import or_
+
+    query = db.query(Contact).filter(
+        Contact.user_id == user_id,
+        Contact.is_active.is_(True),
+    )
+
+    # Apply search filter
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(
+            or_(
+                Contact.first_name.ilike(search_pattern),
+                Contact.last_name.ilike(search_pattern),
+                Contact.company.ilike(search_pattern),
+            )
+        )
+
+    # Apply tag filter - fetch all and filter in Python for SQLite compatibility
+    # In production with PostgreSQL, use Contact.tags.contains([tag]) for better performance
+    if tags:
+        contacts = query.all()
+        filtered_contacts = [
+            c for c in contacts
+            if c.tags and all(tag in c.tags for tag in tags)
+        ]
+        total = len(filtered_contacts)
+        return filtered_contacts[skip : skip + limit], total
+
+    total = query.count()
+    contacts = query.offset(skip).limit(limit).all()
+
+    return contacts, total

@@ -221,3 +221,252 @@ class TestDeleteContact:
         result = restore_contact(db_session, fake_id, test_user.id)
 
         assert result is False
+
+
+class TestSearchContacts:
+    """Tests for contact search functionality."""
+
+    def test_search_by_first_name(self, db_session: Session, test_user: User):
+        """Should find contacts matching first name."""
+        # Create contacts
+        contact1 = Contact(
+            user_id=test_user.id,
+            first_name="John",
+            last_name="Doe",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        contact2 = Contact(
+            user_id=test_user.id,
+            first_name="Jane",
+            last_name="Smith",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        db_session.add_all([contact1, contact2])
+        db_session.commit()
+
+        # Search for "john"
+        from app.services.contact_service import search_contacts
+        results, total = search_contacts(
+            db_session, test_user.id, search="john"
+        )
+
+        assert total == 1
+        assert len(results) == 1
+        assert results[0].first_name == "John"
+
+    def test_search_by_last_name(self, db_session: Session, test_user: User):
+        """Should find contacts matching last name."""
+        contact1 = Contact(
+            user_id=test_user.id,
+            first_name="John",
+            last_name="Doe",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        contact2 = Contact(
+            user_id=test_user.id,
+            first_name="Jane",
+            last_name="Smith",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        db_session.add_all([contact1, contact2])
+        db_session.commit()
+
+        from app.services.contact_service import search_contacts
+        results, total = search_contacts(
+            db_session, test_user.id, search="smith"
+        )
+
+        assert total == 1
+        assert results[0].last_name == "Smith"
+
+    def test_search_by_company(self, db_session: Session, test_user: User):
+        """Should find contacts matching company."""
+        contact1 = Contact(
+            user_id=test_user.id,
+            first_name="John",
+            company="Acme Corporation",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        contact2 = Contact(
+            user_id=test_user.id,
+            first_name="Jane",
+            company="Other Inc",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        db_session.add_all([contact1, contact2])
+        db_session.commit()
+
+        from app.services.contact_service import search_contacts
+        results, total = search_contacts(
+            db_session, test_user.id, search="acme"
+        )
+
+        assert total == 1
+        assert results[0].company == "Acme Corporation"
+
+    def test_search_case_insensitive(self, db_session: Session, test_user: User):
+        """Should find contacts regardless of case."""
+        contact = Contact(
+            user_id=test_user.id,
+            first_name="John",
+            last_name="Doe",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        db_session.add(contact)
+        db_session.commit()
+
+        from app.services.contact_service import search_contacts
+        # Search with different cases
+        for search_term in ["john", "JOHN", "JoHn"]:
+            results, total = search_contacts(
+                db_session, test_user.id, search=search_term
+            )
+            assert total == 1, f"Failed for search term: {search_term}"
+
+    def test_search_partial_match(self, db_session: Session, test_user: User):
+        """Should find contacts with partial matches."""
+        contact = Contact(
+            user_id=test_user.id,
+            first_name="Alexander",
+            last_name="Hamilton",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        db_session.add(contact)
+        db_session.commit()
+
+        from app.services.contact_service import search_contacts
+        results, total = search_contacts(
+            db_session, test_user.id, search="alex"
+        )
+
+        assert total == 1
+        assert results[0].first_name == "Alexander"
+
+    def test_search_no_results(self, db_session: Session, test_user: User):
+        """Should return empty when no matches."""
+        contact = Contact(
+            user_id=test_user.id,
+            first_name="John",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        db_session.add(contact)
+        db_session.commit()
+
+        from app.services.contact_service import search_contacts
+        results, total = search_contacts(
+            db_session, test_user.id, search="nonexistent"
+        )
+
+        assert total == 0
+        assert len(results) == 0
+
+    def test_filter_by_single_tag(self, db_session: Session, test_user: User):
+        """Should filter contacts by a single tag."""
+        contact1 = Contact(
+            user_id=test_user.id,
+            first_name="John",
+            emails=[],
+            phones=[],
+            tags=["work", "important"],
+        )
+        contact2 = Contact(
+            user_id=test_user.id,
+            first_name="Jane",
+            emails=[],
+            phones=[],
+            tags=["personal"],
+        )
+        db_session.add_all([contact1, contact2])
+        db_session.commit()
+
+        from app.services.contact_service import search_contacts
+        results, total = search_contacts(
+            db_session, test_user.id, tags=["work"]
+        )
+
+        assert total == 1
+        assert results[0].first_name == "John"
+
+    def test_filter_by_multiple_tags(self, db_session: Session, test_user: User):
+        """Should filter contacts that have ALL specified tags."""
+        contact1 = Contact(
+            user_id=test_user.id,
+            first_name="John",
+            emails=[],
+            phones=[],
+            tags=["work", "important", "client"],
+        )
+        contact2 = Contact(
+            user_id=test_user.id,
+            first_name="Jane",
+            emails=[],
+            phones=[],
+            tags=["work"],
+        )
+        db_session.add_all([contact1, contact2])
+        db_session.commit()
+
+        from app.services.contact_service import search_contacts
+        # Must have BOTH "work" AND "important"
+        results, total = search_contacts(
+            db_session, test_user.id, tags=["work", "important"]
+        )
+
+        assert total == 1
+        assert results[0].first_name == "John"
+
+    def test_search_and_filter_combined(self, db_session: Session, test_user: User):
+        """Should combine search and tag filter."""
+        contact1 = Contact(
+            user_id=test_user.id,
+            first_name="John Smith",
+            company="Acme",
+            emails=[],
+            phones=[],
+            tags=["work"],
+        )
+        contact2 = Contact(
+            user_id=test_user.id,
+            first_name="John Doe",
+            company="Other",
+            emails=[],
+            phones=[],
+            tags=["personal"],
+        )
+        contact3 = Contact(
+            user_id=test_user.id,
+            first_name="Jane Smith",
+            company="Acme",
+            emails=[],
+            phones=[],
+            tags=["work"],
+        )
+        db_session.add_all([contact1, contact2, contact3])
+        db_session.commit()
+
+        from app.services.contact_service import search_contacts
+        # Search "john" with tag "work"
+        results, total = search_contacts(
+            db_session, test_user.id, search="john", tags=["work"]
+        )
+
+        assert total == 1
+        assert results[0].first_name == "John Smith"
