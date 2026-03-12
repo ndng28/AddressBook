@@ -47,9 +47,11 @@ def get_current_user(
     if payload is None:
         raise credentials_exception
 
-    email: str = payload.get("sub")
-    if email is None:
+    email_obj = payload.get("sub")
+    if email_obj is None or not isinstance(email_obj, str):
         raise credentials_exception
+
+    email: str = email_obj
 
     user = get_user_by_email(db, email=email)
     if user is None:

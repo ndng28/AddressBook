@@ -34,12 +34,11 @@ class Settings(BaseSettings):
 
     @field_validator("secret_key")
     @classmethod
-    def validate_secret_key(cls, v: str, info) -> str:
+    def validate_secret_key(cls, v: str, info: object) -> str:
         """Validate that SECRET_KEY is set in production."""
-        if (
-            info.data.get("environment") == "production"
-            and v == "dev-secret-key-change-in-production"
-        ):
+        # Check if environment is production using dict access
+        env = getattr(info, "data", {}).get("environment")
+        if env == "production" and v == "dev-secret-key-change-in-production":
             raise ValueError("SECRET_KEY must be set in production environment")
         return v
 

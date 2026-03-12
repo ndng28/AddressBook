@@ -24,7 +24,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(
-    data: dict,
+    data: dict[str, object],
     expires_delta: timedelta | None = None,
 ) -> str:
     """Create a JWT access token."""
@@ -39,7 +39,7 @@ def create_access_token(
 
     to_encode.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(
+    encoded_jwt: str = jwt.encode(
         to_encode,
         settings.secret_key,
         algorithm="HS256",
@@ -47,12 +47,12 @@ def create_access_token(
     return encoded_jwt
 
 
-def decode_token(token: str) -> dict | None:
+def decode_token(token: str) -> dict[str, object] | None:
     """Decode and verify a JWT token."""
     settings = get_settings()
 
     try:
-        payload = jwt.decode(
+        payload: dict[str, object] = jwt.decode(
             token,
             settings.secret_key,
             algorithms=["HS256"],

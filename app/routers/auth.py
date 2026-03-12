@@ -24,7 +24,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 def register(
     user_data: UserCreate,
     db: Session = Depends(get_db),
-):
+) -> UserResponse:
     """Register a new user."""
     # Check if user already exists
     db_user = get_user_by_email(db, email=user_data.email)
@@ -43,7 +43,7 @@ def register(
 def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
-):
+) -> Token:
     """Login and get JWT access token."""
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
@@ -59,14 +59,14 @@ def login(
         expires_delta=access_token_expires,
     )
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return Token(access_token=access_token, token_type="bearer")
 
 
 @router.get("/me", response_model=UserResponse)
-def get_current_user(
+def get_current_user_endpoint(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Session = Depends(get_db),
-):
+) -> UserResponse:
     """Get current authenticated user."""
     from app.utils.auth import decode_token
 
@@ -80,9 +80,11 @@ def get_current_user(
     if payload is None:
         raise credentials_exception
 
-    email: str = payload.get("sub")
-    if email is None:
+    email_obj = payload.get("sub")
+    if email_obj is None or not isinstance(email_obj, str):
         raise credentials_exception
+
+    email: str = email_obj
 
     user = get_user_by_email(db, email=email)
     if user is None:
