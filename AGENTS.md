@@ -50,6 +50,48 @@ mypy .
 ruff check . && black --check . && mypy . && pytest
 ```
 
+## Superpowers Skills
+
+AI agents MUST use the following skills. **Golden Rule**: If there's even a 1% chance a skill applies, invoke it BEFORE any response.
+
+### Development Workflow
+
+| Skill | When to Use |
+|-------|-------------|
+| `brainstorming` | **REQUIRED** before building any new feature or component. Explores requirements and design before implementation. |
+| `writing-plans` | Use for multi-step tasks before touching code. Creates structured implementation plans. |
+| `executing-plans` | Use when following an existing implementation plan with review checkpoints. |
+| `dispatching-parallel-agents` | Use when facing 2+ independent tasks that can be worked on in parallel. |
+
+### Code Quality
+
+| Skill | When to Use |
+|-------|-------------|
+| `test-driven-development` | **REQUIRED** when implementing features or bugfixes. Write tests first, then implementation. |
+| `systematic-debugging` | **REQUIRED** when encountering bugs, test failures, or unexpected behavior. |
+| `verification-before-completion` | **REQUIRED** before claiming work is complete, fixed, or passing. Run verification commands. |
+| `requesting-code-review` | Use when completing major features or before merging to verify work meets requirements. |
+| `receiving-code-review` | Use when getting code review feedback to implement suggestions correctly. |
+
+### Git Workflow
+
+| Skill | When to Use |
+|-------|-------------|
+| `using-git-worktrees` | Use for feature work that needs isolation from current workspace. |
+| `finishing-a-development-branch` | Use when implementation is complete and you need to decide how to integrate the work. |
+
+### How to Invoke Skills
+
+In Claude Code: Use the `Skill` tool (e.g., `Skill(name="brainstorming")`)
+
+**Skill Priority:**
+1. Process skills first (brainstorming, debugging) - determine HOW to approach the task
+2. Implementation skills second - guide execution
+
+Example:
+- "Let's add user authentication" → Invoke `brainstorming` first, then `test-driven-development`
+- "Fix this bug" → Invoke `systematic-debugging` first
+
 ## Code Style Guidelines
 
 ### Imports (isort style)
@@ -229,4 +271,7 @@ DEBUG=true
 
 ---
 
-**Note for AI Agents**: Always run `pytest path/to/test.py::test_name` for single tests. Use `ruff check . --fix` before committing.
+**Note for AI Agents**: 
+1. **Invoke skills first**: If there's even a 1% chance a skill applies, invoke it BEFORE any response
+2. Always run `pytest path/to/test.py::test_name` for single tests
+3. Use `ruff check . --fix` before committing
