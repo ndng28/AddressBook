@@ -23,7 +23,7 @@ AddressBook is a simple REST API built with FastAPI and SQLAlchemy for managing 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/AddressBook.git
+git clone https://github.com/ndng28/AddressBook.git
 cd AddressBook
 
 # Create virtual environment
