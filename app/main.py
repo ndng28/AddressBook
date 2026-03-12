@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.database import Base, engine
-from app.routers import auth
+from app.routers import auth, contacts
 
 
 @asynccontextmanager
@@ -25,6 +25,7 @@ app = FastAPI(
 
 # Include routers
 app.include_router(auth.router)
+app.include_router(contacts.router)
 
 
 @app.get("/")
