@@ -22,6 +22,7 @@ from app.services.contact_service import (
     get_contact,
     get_contacts,
     restore_contact,
+    search_contacts,
     update_contact,
 )
 from app.services.user_service import get_user_by_email
@@ -86,6 +87,8 @@ def get_deleted_contacts(
 
 @router.get("", response_model=ContactListResponse)
 def list_contacts(
+    search: str | None = Query(None, description="Search in name and company"),
+    tags: str | None = Query(None, description="Filter by tags (comma-separated)"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(
         20, ge=1, le=100, description="Maximum number of records to return"
@@ -95,7 +98,14 @@ def list_contacts(
 ):
     """List all active contacts for the current user with pagination.
 
+    Supports:
+    - Search: Case-insensitive partial match on first_name, last_name, company
+    - Filter: By tags (comma-separated, contacts must have ALL specified tags)
+    - Pagination: skip/limit parameters
+
     Args:
+        search: Search string for name/company
+        tags: Comma-separated list of tags to filter by
         skip: Number of records to skip for pagination
         limit: Maximum number of records to return (1-100)
         current_user: The authenticated user
@@ -104,7 +114,18 @@ def list_contacts(
     Returns:
         Paginated list of contacts
     """
-    contacts, total = get_contacts(db, current_user.id, skip=skip, limit=limit)
+    # Parse tags from comma-separated string
+    tag_list = None
+    if tags:
+        tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+
+    # Use search_contacts if search or tags provided, otherwise use get_contacts
+    if search or tag_list:
+        contacts, total = search_contacts(
+            db, current_user.id, search=search, tags=tag_list, skip=skip, limit=limit
+        )
+    else:
+        contacts, total = get_contacts(db, current_user.id, skip=skip, limit=limit)
 
     page = (skip // limit) + 1 if limit > 0 else 1
     pages = (total + limit - 1) // limit if limit > 0 else 1

@@ -511,3 +511,170 @@ class TestRestoreContact:
         response = client.post(f"/api/v1/contacts/{contact.id}/restore")
 
         assert response.status_code == 401
+
+
+class TestSearchContacts:
+    """Test contact search and filter endpoints."""
+
+    def test_search_by_name(self, test_user_and_auth):
+        """Should search contacts by name."""
+        client, db, user, auth_headers = test_user_and_auth
+
+        # Create contacts
+        contact1 = Contact(
+            user_id=user.id,
+            first_name="John",
+            last_name="Doe",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        contact2 = Contact(
+            user_id=user.id,
+            first_name="Jane",
+            last_name="Smith",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        db.add_all([contact1, contact2])
+        db.commit()
+
+        response = client.get("/api/v1/contacts?search=john", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert data["items"][0]["first_name"] == "John"
+
+    def test_search_by_company(self, test_user_and_auth):
+        """Should search contacts by company."""
+        client, db, user, auth_headers = test_user_and_auth
+
+        contact1 = Contact(
+            user_id=user.id,
+            first_name="John",
+            company="Acme Corp",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        contact2 = Contact(
+            user_id=user.id,
+            first_name="Jane",
+            company="Other Inc",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        db.add_all([contact1, contact2])
+        db.commit()
+
+        response = client.get("/api/v1/contacts?search=acme", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert data["items"][0]["company"] == "Acme Corp"
+
+    def test_filter_by_tags(self, test_user_and_auth):
+        """Should filter contacts by tags."""
+        client, db, user, auth_headers = test_user_and_auth
+
+        contact1 = Contact(
+            user_id=user.id,
+            first_name="John",
+            emails=[],
+            phones=[],
+            tags=["work", "important"],
+        )
+        contact2 = Contact(
+            user_id=user.id,
+            first_name="Jane",
+            emails=[],
+            phones=[],
+            tags=["personal"],
+        )
+        db.add_all([contact1, contact2])
+        db.commit()
+
+        response = client.get("/api/v1/contacts?tags=work", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert data["items"][0]["first_name"] == "John"
+
+    def test_filter_by_multiple_tags(self, test_user_and_auth):
+        """Should filter contacts by multiple tags (AND logic)."""
+        client, db, user, auth_headers = test_user_and_auth
+
+        contact1 = Contact(
+            user_id=user.id,
+            first_name="John",
+            emails=[],
+            phones=[],
+            tags=["work", "important"],
+        )
+        contact2 = Contact(
+            user_id=user.id,
+            first_name="Jane",
+            emails=[],
+            phones=[],
+            tags=["work"],
+        )
+        db.add_all([contact1, contact2])
+        db.commit()
+
+        response = client.get("/api/v1/contacts?tags=work,important", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert data["items"][0]["first_name"] == "John"
+
+    def test_search_with_pagination(self, test_user_and_auth):
+        """Should paginate search results."""
+        client, db, user, auth_headers = test_user_and_auth
+
+        # Create 25 matching contacts
+        for i in range(25):
+            contact = Contact(
+                user_id=user.id,
+                first_name=f"John{i}",
+                emails=[],
+                phones=[],
+                tags=[],
+            )
+            db.add(contact)
+        db.commit()
+
+        response = client.get("/api/v1/contacts?search=john&limit=10&skip=0", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 25
+        assert len(data["items"]) == 10
+        assert data["page"] == 1
+        assert data["pages"] == 3
+
+    def test_search_no_results(self, test_user_and_auth):
+        """Should return empty list when no matches."""
+        client, db, user, auth_headers = test_user_and_auth
+
+        contact = Contact(
+            user_id=user.id,
+            first_name="John",
+            emails=[],
+            phones=[],
+            tags=[],
+        )
+        db.add(contact)
+        db.commit()
+
+        response = client.get("/api/v1/contacts?search=nonexistent", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 0
+        assert data["items"] == []
